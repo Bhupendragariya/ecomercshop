@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+
+body{
+    font-family: "Lora", serif;
+  font-optical-sizing: auto;
+  font-weight: <weight>;
+  font-style: normal;
+}
+
+.container{ width: 90%; margin: auto}
+
+header .top-strip{
+  border-top: 1px solid rgb(0,0,0,0.1);
+  border-bottom: 1px solid rgb(0,0,0,0.1);
+}
+
+
+.link:hover{
+  color: #ff5252
+}
