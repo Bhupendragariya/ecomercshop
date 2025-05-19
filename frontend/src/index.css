@@ -1,35 +1,104 @@
 @import "tailwindcss";
 
-
-body{
-    font-family: "Lora", serif;
+body {
+  font-family: "Lora", serif;
   font-optical-sizing: auto;
   font-weight: <weight>;
   font-style: normal;
   background: #f5f0f0;
 }
 
-.container{ 
-   width: 90%; 
+.container {
+  width: 90%;
   margin: auto;
 }
 
-header .top-strip{
-  border-top: 1px solid rgb(0,0,0,0.1);
-  border-bottom: 1px solid rgb(0,0,0,0.1);
+header .top-strip {
+  border-top: 1px solid rgb(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgb(0, 0, 0, 0.1);
 }
 
-
-.link:hover{
-  color: #ff5252
+.link:hover {
+  color: #ff5252;
 }
-
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
+
+.swiper-button-next{
+  border-radius: 100%;
+  background-color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px #0000001f, 0 1px 3px #0000003d !important;
+  width: 40px; height: 40px; min-width: 40px;
+  right: 0 !important;
+}
+
+.swiper-button-prev {
+  border-radius: 100%;
+  background-color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px #0000001f, 0 1px 3px #0000003d !important;
+  width: 40px; height: 40px; min-width: 40px;
+  left: 0 !important
+}
+
+
+
+.swiper-button-next::after{
+  font-size: 18px
+  !important;
+  color: black; 
+}
+.swiper-button-prev::after {
+  font-size: 18px
+  !important;
+  color: black; 
+}
+
+
+.card_min .swiper-button-next {
+  width: 30px;
+  height: 30px;
+  min-width:30px;
+}
+.card_min .swiper-button-prev {
+  width: 30px;
+  height: 30px;
+  min-width:30px;
+}
+
+.card_min .swiper-button-next::after {
+  font-size: 14px
+  !important;
+  color: black ; 
+}
+.card_min .swiper-button-prev::after {
+  font-size: 14px
+  !important;
+  color: black ; 
+}
+
+.card_min .swiper-button-prev{
+  left: -10px !important
+}
+.card_min .swiper-button-next {
+ right: -10px !important
+}
+
+
+.card_min .swiper-button-prev:hover,
+.card_min .swiper-button-next:hover{
+  background: #ff5252 !important;
+} 
+
+
+
+.card_min .item:hover img{transform:scale(1.2);}
+
