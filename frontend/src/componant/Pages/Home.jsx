@@ -1,14 +1,36 @@
 import React from "react";
 import { Link } from "react-router";
 import { Swiper, SwiperSlide } from "swiper/react";
-
+import { LiaShippingFastSolid } from "react-icons/lia";
 import "swiper/css";
 import "swiper/css/navigation";
 import { Navigation, Autoplay } from "swiper/modules";
+import AdsBannerSlider from "../Common/AdsBannerSlider/AdsBannerSlider";
+
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Box from '@mui/material/Box';
+import ProductSlider from "../Common/ProductSlider/ProductSlider";
+
+
+
+
+
+
 
 function Home() {
+
+
+    const [value, setValue] = React.useState(0);
+
+  const handleChange = (event, newValue) => {
+    setValue(newValue);
+  };
+
+
   return (
     <>
+    <div className="bg-amber-100">
       <div className="py-4 overflow-x-hidden ">
         <div className="container  ">
           <Swiper
@@ -211,6 +233,85 @@ function Home() {
    
           </Swiper>
         </div>
+      </div>
+      </div>
+
+
+      <div className="bg-white py-8">
+        <section>
+          <div className="container">
+            <div className="flex items-center justify-between">
+              <div className="leftSec ">
+                <h2 className="text-lg font-semibold">
+                  Popular Products
+                </h2>
+                <p>Do not miss the current offers until the end of March.</p>
+              </div>
+
+              <div className="rightSec w-3/5">
+                 <Box >
+      <Tabs
+        value={value}
+        onChange={handleChange}
+        variant="scrollable"
+        scrollButtons="auto"
+        aria-label="scrollable auto tabs example"
+        sx={{ '& .Mui-selected':{
+          color: "#ff5252"
+        },
+
+        '& .MuiTabs-indicator':{
+          backgroundColor: "#ff5252"
+        }
+       }} 
+       
+      >
+        <Tab label="Fashion" />
+        <Tab label="Electronics" />
+        <Tab label="Bags" />
+        <Tab label="Footwear" />
+        <Tab label="Groceries" />
+        <Tab label="Beauty" />
+        <Tab label="wellness" />
+        <Tab label="jewellery" />
+       
+      </Tabs>
+    </Box>
+
+              </div>
+            </div>
+            <ProductSlider items={5} />
+
+          </div>
+        </section>
+      </div>
+
+
+
+
+      <div className="bg-white py-15">
+        <section className="container">
+          <div className="w-full p-4 border py-3 border-red-500 md:flex items-center justify-between rounded-xl mb-5 text-center">
+           
+            <div className="flex items-center gap-3 justify-center ">
+               <LiaShippingFastSolid className="text-5xl transform -scale-x-100" />
+               <span className="text-xl font-semibold uppercase">Free shipping</span>
+            </div>
+
+            <div>
+              <p className="mb-o font-medium">Free Delivery Now On Your First Order And Over $200 </p>
+            </div>
+
+            <div>
+              <p className="font-bold text-2xl"> - Only $200</p>
+            </div>
+
+
+          </div>
+
+          <AdsBannerSlider items={4}/>
+           
+        </section>
       </div>
     </>
   );
