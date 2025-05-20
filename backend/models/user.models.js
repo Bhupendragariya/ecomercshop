@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null
     },
-    verify_email: {
+    isVerified: {
         type: Boolean,
         default: false
     },
@@ -74,28 +74,23 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ["ADMIN", "USER"],
         default: "USER"
-    }
+    },
+      expireAt: {
+    type: Date,
+    default: () => Date.now() + 10 * 60 * 1000, // 10 minutes
+    expires: 0, 
+  },
 }, 
 {timestamps: true});
 
 userSchema.pre("save", async function (next) {
-    if (this.isModified("password")) {
-        this.password = await bcrypt.hash(this.password, 10);
-    }
-
-    if (this.isNew) {
-        this.otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-        this.otp_expiry = Date.now() + 10 * 60 * 1000; // Expires in 10 minutes
-
-        try {
-            await sendVerificationEmail(this.email, this.name, this.otp);
-        } catch (error) {
-            return next(error);
-        }
-    }
-
-    next();
+  if (!this.isModified("password")) {
+    return next();
+  }
+   this.password = await bcrypt.hash(this.password, 10);
+  next();
 });
+
 
 userSchema.methods.comparePassword  =  async function (Password){
     return await bcrypt.compare(Password, this.password);
@@ -112,30 +107,6 @@ userSchema.methods.generateJwtToken = function () {
     });
 }
 
-async function sendVerificationEmail(email, name, otp) {
-  try {
-  
-    console.log("Sending verification email to:", email);
-
-    
-    if (!validator.isEmail(email)) {
-        throw new Error("Invalid recipient email address.");
-    }
-
-    const emailContent = verifycationEmail(name, otp);
-    const mailResponse = await sendEmailFun({
-      sendTo: email,
-      subject: "Verify Your Email - E-commerce App",
-      text: "Please verify your email address by using the OTP sent.",
-      html: emailContent, 
-    });
-
-    console.log("Email sent successfully:", mailResponse.info);
-  } catch (err) {
-    console.error("Error while sending verification email:", err.message);
-    throw err;
-  }
-}
 
 const User = mongoose.model("User", userSchema);
 

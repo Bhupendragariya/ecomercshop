@@ -17,14 +17,14 @@ export const  registerUser = catchAsyncErrors( async (req, res, next) =>{
         if (isUser) {
             return next(new ErrorHandler("User already exists", 400))
         }
-         const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
+         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
          
         const verifyEmail = await sendEmailFun({
             sendTo : email,
             subject : "Verify email from E-commerce app",
             text: "",
-            html: verifycationEmail(name, verifyCode)
+            html: verifycationEmail(name, otp)
         });
 
      
@@ -34,13 +34,14 @@ export const  registerUser = catchAsyncErrors( async (req, res, next) =>{
         } 
        
 
-       const user = await User.create({
+       await User.create({
             email,
             password,
             name,
-            otp: verifyCode,
+            otp,
             otp_expiry: Date.now() + 600000,
-            isVerified: false
+            isVerified: false,
+            expireAt: Date.now() + 10 * 60 * 1000
         });
         
 
