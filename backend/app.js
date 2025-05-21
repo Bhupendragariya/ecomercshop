@@ -7,6 +7,7 @@ import { connectDB } from "./config/connectDB.js";
 import userRouter from "./routes/userRouts.js";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 
+
 dotenv.config();
 
 
@@ -14,6 +15,7 @@ dotenv.config();
 const app = express();
 
 app.use(express.json());
+
 
 const PORT = process.env.PORT || 5000;
 
