@@ -54,6 +54,7 @@ const userSchema = new mongoose.Schema(
       enum: ["Active", "Inactive", "Suspended"],
       default: "Active",
     },
+
     address_details: [
       {
         type: mongoose.Schema.ObjectId,
@@ -87,9 +88,15 @@ const userSchema = new mongoose.Schema(
     },
     expireAt: {
       type: Date,
-      default: () => Date.now() + 10 * 60 * 1000,
-      expires: 0,
     },
+    refreshToken: {
+        type: String
+    },
+
+
+     resetPasswordToken: String,
+  resetPasswordExpire: Date,
+  
   },
   { timestamps: true }
 );
@@ -106,7 +113,7 @@ userSchema.methods.comparePassword = async function (Password) {
   return await bcrypt.compare(Password, this.password);
 };
 
-userSchema.methods.generateJwtToken = function () {
+userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {
       id: this._id,
@@ -118,6 +125,21 @@ userSchema.methods.generateJwtToken = function () {
     }
   );
 };
+
+
+userSchema.methods.generateRefreshToken = function() {
+    return jwt.sign(
+        {
+        id: this._id,
+          
+        },
+        process.env.REFRESH_TOKEN_SECRET,
+        {
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+        }
+    )
+
+}
 
 
 

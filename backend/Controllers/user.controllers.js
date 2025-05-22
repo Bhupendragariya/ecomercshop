@@ -3,8 +3,26 @@ import ErrorHandler from "../middlewares/errorMiddleware.js";
 import { catchAsyncErrors } from "../middlewares/catchAsyncErrors.js";
 import sendEmailFun from "../utils/sendEmail.js";
 import verifycationEmail from "../utils/verifyEmailTemplet.js";
-import { token } from "morgan";
 import crypto from "crypto";
+
+const generateAccessAndRefreshTokens = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) throw new Error("User not found");
+
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    console.error("Token generation error:", error);
+    throw new Error("Something went wrong while generating tokens");
+  }
+};
+
 
 export const registerUser = catchAsyncErrors(async (req, res, next) => {
   try {
@@ -70,18 +88,24 @@ export const verifyOTP = catchAsyncErrors(async (req, res, next) => {
 
   user.isVerified = true;
   user.otp = undefined;
-  user.otp_expiry = undefined;
-  user.expireAt = undefined;
+  user.otp_expiry = undefined; 
+  user.set("expireAt", undefined, { strict: false });
+
   user.last_login_date = new Date();
   await user.save();
 
-  const token = user.generateJwtToken();
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
+    user._id
+  );
 
   res
-    .cookie("userToken", token, {
+    .cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: true,
-      sameSite: "Strict",
+    })
+    .cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
     })
     .status(200)
     .json({
@@ -105,46 +129,49 @@ export const loginUser = catchAsyncErrors(async (req, res, next) => {
       return next(new ErrorHandler("Invalid email or password", 400));
     }
 
+    if (user.status !== "Active") {
+      return next(new ErrorHandler("connect with admin", 400));
+    }
+
     const isPasswordMatched = await user.comparePassword(password);
 
     if (!isPasswordMatched) {
       return next(new ErrorHandler("Invalid email or password", 400));
     }
 
-    if (user.role != role) {
+    if (user.role !== role) {
       return next(
         new ErrorHandler("You are not authorized to access this resource", 403)
       );
     }
 
-
-    const token = user.generateJwtToken();
-    
     user.last_login_date = new Date();
-
 
     await user.save();
 
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
+        user._id
+    );
 
     res
-      .cookie("userToken", token, {
+      .cookie("accessToken", accessToken, {
         httpOnly: true,
         secure: true,
-        sameSite: "Strict",
+      })
+      .cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: true,
       })
       .status(200)
       .json({
         success: true,
         message: "logged in successfully.",
         user,
-        
       });
   } catch (error) {
     return next(new ErrorHandler(error.message, 500));
   }
 });
-
-
 
 export const forgotPassword = catchAsyncErrors(async (req, res, next) => {
   const { email } = req.body;
@@ -155,7 +182,9 @@ export const forgotPassword = catchAsyncErrors(async (req, res, next) => {
   const resetToken = user.getResetPasswordToken();
   await user.save({ validateBeforeSave: false });
 
-  const resetUrl = `${req.protocol}://${req.get("host")}/api/v1/password/reset/${resetToken}`;
+  const resetUrl = `${req.protocol}://${req.get(
+    "host"
+  )}/api/v1/password/reset/${resetToken}`;
 
   const message = `
     Hi ${user.name},
@@ -188,94 +217,89 @@ export const forgotPassword = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
-
-
-
-
 export const resetPassword = catchAsyncErrors(async (req, res, next) => {
-try {
-      const { userToken } = req.params;
-  const { newPassword } = req.body;
-
+  try {
+    const { userToken } = req.params;
+    const { newPassword } = req.body;
 
     if (!userToken) {
-    return next(new ErrorHandler("Reset token is missing", 400));
-  }
+      return next(new ErrorHandler("Reset token is missing", 400));
+    }
 
-
-    const resetTokenHashed = crypto.createHash("sha256").update(userToken).digest("hex");
-
+    const resetTokenHashed = crypto
+      .createHash("sha256")
+      .update(userToken)
+      .digest("hex");
 
     const user = await User.findOne({
-    resetPasswordToken: resetTokenHashed,
-    resetPasswordExpire: { $gt: Date.now() },
-  });
+      resetPasswordToken: resetTokenHashed,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
 
+    if (!newPassword || newPassword.length <= 6) {
+      return next(
+        new ErrorHandler("Password must be at least 6 characters", 400)
+      );
+    }
 
+    if (!user) {
+      return next(new ErrorHandler("Invalid or expired token", 400));
+    }
 
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
 
-  if (!newPassword || newPassword.length <= 6) {
-    return next(new ErrorHandler("Password must be at least 6 characters", 400));
+    await user.save();
+
+    const token = user.generateJwtToken();
+
+    res
+      .cookie("userToken", token, {
+        httpOnly: true,
+        secure: true,
+      })
+      .status(200)
+      .json({
+        success: true,
+        message: "Password reset successful!",
+        user,
+      });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 500));
   }
-
-
-
-
-  if (!user) {
-    return next(new ErrorHandler("Invalid or expired token", 400));
-  }
-
-  
-
-  user.password = newPassword;
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpire = undefined;
-
- 
-
-  await user.save();
-
-  const token = user.generateJwtToken();
-
-  res.cookie("userToken", token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "Strict",
-  }).status(200).json({
-    success: true,
-    message: "Password reset successful!",
-    user,
-  });
-} catch (error) {
-    return (next(new ErrorHandler(error.message, 500)))
-    
-}
 });
 
-
-
-
-
-
 export const logoutUser = catchAsyncErrors(async (req, res, next) => {
-  res
-    .status(200)
-    .cookie("userToken", null, {
-      httpOnly: true,
-      expires: new Date(Date.now()),
-    })
-    .json({
+  try {
+    await User.findByIdAndUpdate(
+      req.user_id,
+      {
+        $set: { refreshToken: undefined },
+      },
+      {
+        new: true,
+      }
+    );
+
+    res
+      .clearCookie("accessToken",  {
+        httpOnly: true,
+        secure: true,
+      })
+      .clearCookie("refreshToken",{
+         httpOnly: true,
+        secure: true,
+      }).json({
       success: true,
       message: "Logged out successfully.",
     });
+
+
+  } catch (error) {
+
+
+    return next(new ErrorHandler(error.message, 500));
+  }
+  
 });
-
-
-
-
-
-
-
-
-
-
