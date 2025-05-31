@@ -4,6 +4,7 @@ import { catchAsyncErrors } from "../middlewares/catchAsyncErrors.js";
 import sendEmailFun from "../utils/sendEmail.js";
 import verifycationEmail from "../utils/verifyEmailTemplet.js";
 import crypto from "crypto";
+import bcrypt from 'bcryptjs';
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -220,7 +221,7 @@ export const forgotPassword = catchAsyncErrors(async (req, res, next) => {
 export const resetPassword = catchAsyncErrors(async (req, res, next) => {
   try {
     const { userToken } = req.params;
-    const { newPassword } = req.body;
+   
 
     if (!userToken) {
       return next(new ErrorHandler("Reset token is missing", 400));
@@ -269,6 +270,63 @@ export const resetPassword = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler(error.message, 500));
   }
 });
+
+
+
+export const changePasswordUser = catchAsyncErrors(async( req, res, next) =>{
+
+
+  const { oldPassword, newPassword, confirmPassword } = req.body;
+
+try {
+    const user = await User.findById(req.user._id).select("+password");
+  
+    if (!user) {
+      return next(new ErrorHandler("User is not found", 400))
+    }
+  
+    const isOldPasswordCorrect = await user.comparePassword(oldPassword);
+  
+    if (!isOldPasswordCorrect) {
+      return next( new ErrorHandler("Old password is incorrect", 400))
+    }
+  
+  
+    if (!newPassword || newPassword.length <= 6 ) {
+      return next(new ErrorHandler("Password must be at least 6 characters", 400))
+      
+    }
+  
+  
+    if (newPassword !== confirmPassword) {
+       return next(new ErrorHandler("New password and confirm password do not match", 400));
+    }
+  
+  
+    
+
+    user.password = newPassword;
+
+    await user.save();
+
+      res.status(200).json({
+    success: true,
+    message: "Password updated successfully!",
+  });
+
+
+} catch (error) {
+
+  return next(new ErrorHandler(error.message))
+  
+}
+
+
+
+
+
+
+})
 
 export const logoutUser = catchAsyncErrors(async (req, res, next) => {
   try {
